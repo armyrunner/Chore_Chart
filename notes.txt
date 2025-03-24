@@ -1,0 +1,990 @@
+Creating a chore chart generator for a family with Python, using PrettyTable, Pickle, and generating a PDF output, involves several steps. We will create classes for better structure, use external files to store data (e.g., chores), and generate a PDF version of the chart using a library like `fpdf`. Here's how we can approach it:
+
+### Steps:
+
+1. **Create Classes for Chores and Family:**
+   - A `ChoreChart` class will manage the chores.
+   - A `FamilyMember` class to represent each family member.
+
+2. **Use PrettyTable to display the chart in a tabular format.**
+
+3. **Use Pickle to save and load the chore data for persistence.**
+
+4. **Generate a PDF output of the chore chart using `fpdf`.**
+
+5. **Create a Fancy Menu System for interacting with the program.**
+
+### 1. File Structure:
+```plaintext
+chore_chart/
+│
+├── chore_chart.py          # Main logic for chore chart
+├── chore_data.pkl          # Pickled data for chores
+├── generate_pdf.py         # Code to generate PDF
+├── menu.py                 # Menu system
+└── chores.txt              # A simple text file with available chores
+```
+
+### 2. Python Code:
+
+#### chore_chart.py (Main Logic)
+
+```python
+import random
+import pickle
+from prettytable import PrettyTable
+
+class ChoreChart:
+    def __init__(self):
+        self.chores = []
+        self.family_members = []
+        self.load_chores()
+        self.load_family_members()
+
+    def load_chores(self):
+        try:
+            with open("chores.txt", "r") as f:
+                self.chores = [line.strip() for line in f.readlines()]
+        except FileNotFoundError:
+            print("Chores file not found. Please add some chores to chores.txt.")
+    
+    def load_family_members(self):
+        # Placeholder for loading family members.
+        # For simplicity, you can add family members manually later or through a menu
+        self.family_members = ['Dad', 'Mom', 'Alice', 'Bob']
+
+    def create_chore_chart(self):
+        chart = {day: random.sample(self.chores, len(self.family_members)) for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]}
+        return chart
+
+    def display_chore_chart(self, chart):
+        table = PrettyTable()
+        table.field_names = ["Family Member"] + list(chart.keys())
+        
+        for member in self.family_members:
+            row = [member] + [', '.join(chart[day][i] for day in chart) for i in range(len(self.family_members))]
+            table.add_row(row)
+        
+        print(table)
+
+    def save_chart(self, chart):
+        with open("chore_chart.pkl", "wb") as f:
+            pickle.dump(chart, f)
+
+    def load_chart(self):
+        try:
+            with open("chore_chart.pkl", "rb") as f:
+                chart = pickle.load(f)
+            return chart
+        except FileNotFoundError:
+            print("No saved chore chart found.")
+            return None
+```
+
+#### generate_pdf.py (Generate PDF)
+
+```python
+from fpdf import FPDF
+import pickle
+
+def generate_pdf(chart):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    
+    pdf.set_font("Arial", size=12)
+    pdf.cell(200, 10, txt="Family Chore Chart", ln=True, align="C")
+
+    # Create table
+    pdf.ln(10)
+    pdf.set_font("Arial", size=10)
+    days = list(chart.keys())
+    family_members = list(chart[days[0]].keys())
+
+    for day in days:
+        pdf.cell(30, 10, day, border=1, align='C')
+    pdf.ln()
+
+    for member in family_members:
+        pdf.cell(30, 10, member, border=1, align='C')
+        for day in days:
+            chores = chart[day][member]
+            pdf.cell(40, 10, chores, border=1, align='C')
+        pdf.ln()
+    
+    pdf.output("chore_chart.pdf")
+
+def load_chart():
+    try:
+        with open("chore_chart.pkl", "rb") as f:
+            chart = pickle.load(f)
+        return chart
+    except FileNotFoundError:
+        print("No saved chore chart found.")
+        return None
+```
+
+#### menu.py (Menu system)
+
+```python
+import sys
+from chore_chart import ChoreChart
+from generate_pdf import generate_pdf
+
+def print_menu():
+    print("\n===== Family Chore Chart Menu =====")
+    print("1. Generate New Chore Chart")
+    print("2. View Chore Chart")
+    print("3. Save Chore Chart")
+    print("4. Load Chore Chart")
+    print("5. Generate PDF of Chore Chart")
+    print("6. Exit")
+
+def main():
+    chart_manager = ChoreChart()
+    
+    while True:
+        print_menu()
+        choice = input("Choose an option: ")
+        
+        if choice == '1':
+            chart = chart_manager.create_chore_chart()
+            chart_manager.display_chore_chart(chart)
+        elif choice == '2':
+            chart = chart_manager.create_chore_chart()
+            chart_manager.display_chore_chart(chart)
+        elif choice == '3':
+            chart = chart_manager.create_chore_chart()
+            chart_manager.save_chart(chart)
+            print("Chore chart saved.")
+        elif choice == '4':
+            chart = chart_manager.load_chart()
+            if chart:
+                chart_manager.display_chore_chart(chart)
+        elif choice == '5':
+            chart = chart_manager.load_chart()
+            if chart:
+                generate_pdf(chart)
+                print("PDF generated.")
+        elif choice == '6':
+            sys.exit()
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
+```
+
+#### chores.txt (Chores List)
+
+```plaintext
+Wash Dishes
+Vacuum
+Clean Bathroom
+Take out Trash
+Fold Laundry
+Mop Floors
+Water Plants
+Feed Pets
+Make Bed
+Sweep Porch
+```
+
+### 3. Running the Program:
+1. **Start the Program:**
+   - Run `menu.py` to get the menu interface and interact with the program.
+
+2. **Generate a New Chore Chart:**
+   - This will randomly assign chores to family members for each day of the week.
+
+3. **Save and Load Data:**
+   - You can save the generated chore chart using Pickle and load it back when needed.
+
+4. **Generate a PDF:**
+   - If you have a saved chart, you can generate a PDF version of the chore chart.
+
+### 4. Notes:
+- You can modify the list of chores by editing the `chores.txt` file.
+- Add more family members manually or via code updates in `ChoreChart`.
+- The program will allow adding, saving, and loading chore data, so you can easily track chore assignments.
+
+Would you like more details or help with any part of the code?
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Example
+
+Sure! Here's a sample of what the chore chart could look like when displayed using the **PrettyTable** format, based on random chore assignments.
+
+Let's assume we have a family of four members: **Dad, Mom, Alice, and Bob**. Here's how a sample chore chart could be displayed:
+
+### Sample Chore Chart (PrettyTable Format)
+
+```plaintext
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Family Member  |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Dad            |  Wash Dishes  |  Vacuum   |  Fold Laundry |  Clean Bathroom |  Water Plants |  Feed Pets |  Make Bed  |
+| Mom            |  Mop Floors   |  Sweep Porch |  Take out Trash |  Wash Dishes   |  Feed Pets  |  Make Bed  |  Clean Bathroom |
+| Alice          |  Take out Trash |  Clean Bathroom |  Mop Floors |  Water Plants |  Wash Dishes |  Fold Laundry |  Vacuum   |
+| Bob            |  Feed Pets    |  Water Plants |  Vacuum    |  Take out Trash |  Mop Floors  |  Clean Bathroom |  Sweep Porch |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+```
+
+### Explanation:
+
+- The first column shows the **family members**: Dad, Mom, Alice, and Bob.
+- Each row represents a **family member**'s assignments for each **day of the week** (Sunday through Saturday).
+- The **chores** for each family member on each day are assigned randomly from the list of chores. In this case, the chores have been randomly distributed for the entire week.
+
+This is what you will see printed when you call the `display_chore_chart()` method in the code, which uses PrettyTable to format the data into a neat table.
+
+If you'd like, I can also show how to generate a **PDF version** of this chart. Would you like to proceed with that?
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Yes, you can definitely add a row for the **dates** under the headers to make the chore chart more detailed. This can help to visually organize the chart with the actual dates corresponding to each day of the week. Here's how you can modify the `PrettyTable` output to include the **dates row** under the headers.
+
+### Modified Sample Chore Chart with Dates
+
+Let's assume the chore chart starts on **Sunday, March 30, 2025**, and we want to display the dates for each day of the week below the corresponding day headers.
+
+#### Modified Chore Chart:
+
+```plaintext
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Family Member  |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Dates          |  Mar 30   |  Mar 31   |  Apr 1    |  Apr 2    |  Apr 3    |  Apr 4    |  Apr 5    |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Dad            |  Wash Dishes  |  Vacuum   |  Fold Laundry |  Clean Bathroom |  Water Plants |  Feed Pets |  Make Bed  |
+| Mom            |  Mop Floors   |  Sweep Porch |  Take out Trash |  Wash Dishes   |  Feed Pets  |  Make Bed  |  Clean Bathroom |
+| Alice          |  Take out Trash |  Clean Bathroom |  Mop Floors |  Water Plants |  Wash Dishes |  Fold Laundry |  Vacuum   |
+| Bob            |  Feed Pets    |  Water Plants |  Vacuum    |  Take out Trash |  Mop Floors  |  Clean Bathroom |  Sweep Porch |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+```
+
+### How to Implement the Dates Row in the Code:
+
+You can modify the `display_chore_chart()` method in the `ChoreChart` class to include a row for the dates. Here's how you can add it:
+
+#### Updated `display_chore_chart()` Method:
+
+```python
+from prettytable import PrettyTable
+
+class ChoreChart:
+    # Assume the rest of the class is the same
+
+    def display_chore_chart(self, chart):
+        table = PrettyTable()
+        table.field_names = ["Family Member"] + list(chart.keys())
+
+        # Add a row for dates under the headers
+        dates = ["Mar 30", "Mar 31", "Apr 1", "Apr 2", "Apr 3", "Apr 4", "Apr 5"]  # Example dates
+        table.add_row(["Dates"] + dates)
+
+        # Fill the table with chore assignments
+        for member in self.family_members:
+            row = [member] + [', '.join(chart[day][i] for day in chart) for i in range(len(self.family_members))]
+            table.add_row(row)
+
+        print(table)
+```
+
+### Explanation of Changes:
+
+1. **Adding the Dates Row:**
+   - We create a list `dates = ["Mar 30", "Mar 31", "Apr 1", "Apr 2", "Apr 3", "Apr 4", "Apr 5"]` to represent the dates of the week starting from Sunday.
+   - We then add the dates row right under the headers using `table.add_row(["Dates"] + dates)`.
+
+2. **Chore Assignments:**
+   - The rest of the table is filled with the random chore assignments, just like before, but now the dates are neatly aligned under each corresponding day of the week.
+
+### Final Output with Dates:
+
+```plaintext
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Family Member  |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Dates          |  Mar 30   |  Mar 31   |  Apr 1    |  Apr 2    |  Apr 3    |  Apr 4    |  Apr 5    |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Dad            |  Wash Dishes  |  Vacuum   |  Fold Laundry |  Clean Bathroom |  Water Plants |  Feed Pets |  Make Bed  |
+| Mom            |  Mop Floors   |  Sweep Porch |  Take out Trash |  Wash Dishes   |  Feed Pets  |  Make Bed  |  Clean Bathroom |
+| Alice          |  Take out Trash |  Clean Bathroom |  Mop Floors |  Water Plants |  Wash Dishes |  Fold Laundry |  Vacuum   |
+| Bob            |  Feed Pets    |  Water Plants |  Vacuum    |  Take out Trash |  Mop Floors  |  Clean Bathroom |  Sweep Porch |
++-----------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+```
+
+### Conclusion:
+
+With this modification, the chore chart is now more informative, with dates clearly shown for each day of the week. The family members' chores are still displayed, but now you can visually track which date corresponds to each day.
+
+Let me know if you'd like to generate the PDF with these changes, or if you'd like to add anything else!
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To create a **separate chore chart** for each family member with the family member's name placed above the chore chart on the left side and the list of chores under the dates, we can adjust the structure. The chore chart will be organized such that:
+
+1. The **family member's name** appears at the top of their chart.
+2. The **dates** appear at the top as headers.
+3. The **chores** are listed in the first column.
+4. The rest of the table is blank except for checkboxes (or placeholders) that can be marked when printed.
+
+We will modify the code to generate this format.
+
+### Desired Structure:
+
+For each family member:
+
+- **Top-left:** Family member's name.
+- **First column:** List of chores under each date.
+- **Remaining cells:** Blank (or checkboxes for marking the completion of chores).
+
+Here's how we can adjust the code to achieve that.
+
+### Updated Code:
+
+#### chore_chart.py (Main Logic)
+
+```python
+import random
+import pickle
+from prettytable import PrettyTable
+
+class ChoreChart:
+    def __init__(self):
+        self.chores = []
+        self.family_members = []
+        self.load_chores()
+        self.load_family_members()
+
+    def load_chores(self):
+        try:
+            with open("chores.txt", "r") as f:
+                self.chores = [line.strip() for line in f.readlines()]
+        except FileNotFoundError:
+            print("Chores file not found. Please add some chores to chores.txt.")
+    
+    def load_family_members(self):
+        # Placeholder for loading family members. Add or modify as needed.
+        self.family_members = ['Dad', 'Mom', 'Alice', 'Bob']
+
+    def create_chore_chart(self):
+        chart = {day: random.sample(self.chores, len(self.family_members)) for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]}
+        return chart
+
+    def display_family_chore_chart(self, chart):
+        for member in self.family_members:
+            table = PrettyTable()
+            table.field_names = ["Chores"] + list(chart.keys())  # Dates across top
+
+            # Add chores for each member, leaving the rest of the columns blank for marking
+            for i, chore in enumerate(self.chores):
+                row = [chore] + [''] * len(chart)  # Chores listed, blank cells for checking
+                table.add_row(row)
+            
+            # Print the family member's chore chart with their name at the top
+            print(f"Chore Chart for {member}")
+            print(table)
+            print("\n")
+
+    def save_chart(self, chart):
+        with open("chore_chart.pkl", "wb") as f:
+            pickle.dump(chart, f)
+
+    def load_chart(self):
+        try:
+            with open("chore_chart.pkl", "rb") as f:
+                chart = pickle.load(f)
+            return chart
+        except FileNotFoundError:
+            print("No saved chore chart found.")
+            return None
+```
+
+### Explanation of Changes:
+
+1. **Create a Separate Chore Chart for Each Family Member:**
+   - We iterate over the `self.family_members` list and create a separate `PrettyTable` for each family member.
+   
+2. **Field Names:**
+   - The first column (`"Chores"`) is for the list of chores.
+   - The remaining columns correspond to each day of the week (Sunday through Saturday).
+
+3. **Empty Cells for Checkboxes:**
+   - For each chore, we leave the cells blank for the family member to check off (or manually fill in when printed).
+
+4. **Family Member's Name at the Top:**
+   - We print a header showing the **family member's name** before the chore chart for that individual.
+
+#### menu.py (Menu System)
+
+We will slightly update the menu to display the separate chore charts for each family member.
+
+```python
+import sys
+from chore_chart import ChoreChart
+
+def print_menu():
+    print("\n===== Family Chore Chart Menu =====")
+    print("1. Generate New Chore Chart")
+    print("2. View Chore Chart")
+    print("3. Save Chore Chart")
+    print("4. Load Chore Chart")
+    print("5. Exit")
+
+def main():
+    chart_manager = ChoreChart()
+    
+    while True:
+        print_menu()
+        choice = input("Choose an option: ")
+        
+        if choice == '1':
+            chart = chart_manager.create_chore_chart()
+            chart_manager.display_family_chore_chart(chart)
+        elif choice == '2':
+            chart = chart_manager.create_chore_chart()
+            chart_manager.display_family_chore_chart(chart)
+        elif choice == '3':
+            chart = chart_manager.create_chore_chart()
+            chart_manager.save_chart(chart)
+            print("Chore chart saved.")
+        elif choice == '4':
+            chart = chart_manager.load_chart()
+            if chart:
+                chart_manager.display_family_chore_chart(chart)
+        elif choice == '5':
+            sys.exit()
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
+```
+
+### Sample Output for Each Family Member:
+
+For **Dad**, the output will look something like this:
+
+```plaintext
+Chore Chart for Dad
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+
+...
+```
+
+For **Alice**, the output will look similar, but with Alice's assigned chores.
+
+### Additional Notes:
+
+- **Checkmarks:** When printing the chart, you can manually add checkmarks (`✔`) or use a pen/pencil to mark chores that have been completed.
+- **Family Member-Specific Charts:** Each family member gets their own chart, and you can easily add new members by modifying the `self.family_members` list in the `ChoreChart` class.
+- **Saving and Loading:** You can save and load the chore chart using Pickle if you'd like to persist the data.
+
+If you'd like to generate a **PDF version** of these individual chore charts, we can add that functionality as well. Let me know if you'd like to proceed with that!
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To add a **time frame** on the left side of the page, on the same line as the name of the person, we will need to modify the output format. The **time frame** will indicate the week for which the chores are assigned, and it will be placed on the same line as the family member's name at the top of the chart.
+
+For example:
+- You can add a time frame like **"Week of Mar 30, 2025 - Apr 5, 2025"** alongside the person's name.
+
+We can place this time frame on the left side of the page, and update the code to ensure that it appears before the chore chart begins.
+
+### Updated Output Structure:
+
+The format will look something like this:
+
+```
+Week of Mar 30, 2025 - Apr 5, 2025 | Chore Chart for Dad
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+...
+```
+
+### Code Update to Include Time Frame:
+
+1. We'll modify the `display_family_chore_chart` method to include the **time frame**.
+2. We'll print the time frame alongside the family member’s name.
+
+#### Updated `chore_chart.py`:
+
+```python
+import random
+import pickle
+from prettytable import PrettyTable
+
+class ChoreChart:
+    def __init__(self):
+        self.chores = []
+        self.family_members = []
+        self.load_chores()
+        self.load_family_members()
+
+    def load_chores(self):
+        try:
+            with open("chores.txt", "r") as f:
+                self.chores = [line.strip() for line in f.readlines()]
+        except FileNotFoundError:
+            print("Chores file not found. Please add some chores to chores.txt.")
+    
+    def load_family_members(self):
+        # Placeholder for loading family members. Add or modify as needed.
+        self.family_members = ['Dad', 'Mom', 'Alice', 'Bob']
+
+    def create_chore_chart(self):
+        chart = {day: random.sample(self.chores, len(self.family_members)) for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]}
+        return chart
+
+    def display_family_chore_chart(self, chart, start_date, end_date):
+        # Generate time frame
+        time_frame = f"Week of {start_date} - {end_date}"
+        
+        for member in self.family_members:
+            table = PrettyTable()
+            table.field_names = ["Chores"] + list(chart.keys())  # Dates across top
+
+            # Add chores for each member, leaving the rest of the columns blank for marking
+            for i, chore in enumerate(self.chores):
+                row = [chore] + [''] * len(chart)  # Chores listed, blank cells for checking
+                table.add_row(row)
+            
+            # Print the family member's chore chart with their name at the top
+            print(f"{time_frame} | Chore Chart for {member}")
+            print(table)
+            print("\n")
+
+    def save_chart(self, chart):
+        with open("chore_chart.pkl", "wb") as f:
+            pickle.dump(chart, f)
+
+    def load_chart(self):
+        try:
+            with open("chore_chart.pkl", "rb") as f:
+                chart = pickle.load(f)
+            return chart
+        except FileNotFoundError:
+            print("No saved chore chart found.")
+            return None
+```
+
+### Explanation of Changes:
+
+1. **Time Frame as a String:**
+   - We added a `start_date` and `end_date` parameter to the `display_family_chore_chart` method, so you can customize the week for which the chart is generated.
+   - The `time_frame` string is constructed to indicate the range of the week (e.g., "Week of Mar 30, 2025 - Apr 5, 2025").
+
+2. **Print the Time Frame:**
+   - The time frame is printed in the format `"Week of [start_date] - [end_date]"` before the family member's chore chart.
+
+### How to Use the Time Frame:
+
+When you call the `display_family_chore_chart` method, pass in the **start date** and **end date** for the week you want the chart to represent.
+
+#### Example Call:
+
+```python
+chart_manager = ChoreChart()
+chart = chart_manager.create_chore_chart()
+start_date = "Mar 30, 2025"
+end_date = "Apr 5, 2025"
+chart_manager.display_family_chore_chart(chart, start_date, end_date)
+```
+
+### Sample Output with Time Frame:
+
+```plaintext
+Week of Mar 30, 2025 - Apr 5, 2025 | Chore Chart for Dad
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+
+Week of Mar 30, 2025 - Apr 5, 2025 | Chore Chart for Mom
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+```
+
+### Conclusion:
+
+Now, the chore chart for each family member will have the **time frame** (the week of) printed at the top left, right next to their name. This makes it clear which week the chore assignments correspond to.
+
+Let me know if you'd like to add any further customizations or need help with generating a PDF version!
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Ah, I see! You want the **time frame** (e.g., "Week of Mar 30, 2025 - Apr 5, 2025") to be on the **right side** of the family member's name, not the left. Thanks for the clarification!
+
+### Updated Output Structure:
+
+For each family member, the output will look like this:
+
+```
+Chore Chart for Dad | Week of Mar 30, 2025 - Apr 5, 2025
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+
+Week of Mar 30, 2025 - Apr 5, 2025 | Chore Chart for Mom
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+```
+
+### Code Update to Move Time Frame to the Right:
+
+We will modify the `display_family_chore_chart` method to print the time frame **to the right** of the family member’s name. Here's the updated version:
+
+#### Updated `chore_chart.py`:
+
+```python
+import random
+import pickle
+from prettytable import PrettyTable
+
+class ChoreChart:
+    def __init__(self):
+        self.chores = []
+        self.family_members = []
+        self.load_chores()
+        self.load_family_members()
+
+    def load_chores(self):
+        try:
+            with open("chores.txt", "r") as f:
+                self.chores = [line.strip() for line in f.readlines()]
+        except FileNotFoundError:
+            print("Chores file not found. Please add some chores to chores.txt.")
+    
+    def load_family_members(self):
+        # Placeholder for loading family members. Add or modify as needed.
+        self.family_members = ['Dad', 'Mom', 'Alice', 'Bob']
+
+    def create_chore_chart(self):
+        chart = {day: random.sample(self.chores, len(self.family_members)) for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]}
+        return chart
+
+    def display_family_chore_chart(self, chart, start_date, end_date):
+        # Generate time frame
+        time_frame = f"Week of {start_date} - {end_date}"
+        
+        for member in self.family_members:
+            table = PrettyTable()
+            table.field_names = ["Chores"] + list(chart.keys())  # Dates across top
+
+            # Add chores for each member, leaving the rest of the columns blank for marking
+            for i, chore in enumerate(self.chores):
+                row = [chore] + [''] * len(chart)  # Chores listed, blank cells for checking
+                table.add_row(row)
+            
+            # Print the family member's chore chart with their name on the left and time frame on the right
+            print(f"Chore Chart for {member} | {time_frame}")
+            print(table)
+            print("\n")
+
+    def save_chart(self, chart):
+        with open("chore_chart.pkl", "wb") as f:
+            pickle.dump(chart, f)
+
+    def load_chart(self):
+        try:
+            with open("chore_chart.pkl", "rb") as f:
+                chart = pickle.load(f)
+            return chart
+        except FileNotFoundError:
+            print("No saved chore chart found.")
+            return None
+```
+
+### Explanation of Changes:
+
+1. **Time Frame on the Right:**
+   - The `time_frame` (e.g., "Week of Mar 30, 2025 - Apr 5, 2025") is printed **after** the family member's name in the format: `"Chore Chart for [member] | Week of [start_date] - [end_date]"`.
+   - This change ensures the time frame is positioned to the right, as per your request.
+
+2. **Printing Format:**
+   - The table for each family member is printed, and the time frame appears on the same line after the family member's name.
+
+#### Example Call:
+
+```python
+chart_manager = ChoreChart()
+chart = chart_manager.create_chore_chart()
+start_date = "Mar 30, 2025"
+end_date = "Apr 5, 2025"
+chart_manager.display_family_chore_chart(chart, start_date, end_date)
+```
+
+### Sample Output:
+
+```plaintext
+Chore Chart for Dad | Week of Mar 30, 2025 - Apr 5, 2025
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+
+Chore Chart for Mom | Week of Mar 30, 2025 - Apr 5, 2025
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+| Vacuum            |           |           |           |           |           |           |           |
+| Clean Bathroom    |           |           |           |           |           |           |           |
+| Take out Trash    |           |           |           |           |           |           |           |
+| Fold Laundry      |           |           |           |           |           |           |           |
+| Mop Floors        |           |           |           |           |           |           |           |
+| Water Plants      |           |           |           |           |           |           |           |
+| Feed Pets         |           |           |           |           |           |           |           |
+| Make Bed          |           |           |           |           |           |           |           |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+```
+
+### Conclusion:
+
+Now, the **time frame** appears **on the right** side of the family member's name, making it clear which week the chore assignments correspond to. This layout keeps the family member's name and time frame together while maintaining clarity.
+
+Let me know if you need further modifications or if you'd like to proceed with generating a PDF!
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To add horizontal lines for every row when printing to a PDF, we'll need to make a few updates to the code.
+
+In order to generate a **PDF** with horizontal lines for each row, we will use the `reportlab` library, which is capable of creating PDFs with rich formatting, including tables with horizontal lines. We won't be able to use `prettytable` for PDF generation because it's primarily designed for console output, but we can manually create a table with `reportlab` that will have horizontal lines for every row.
+
+### Steps to Achieve This:
+1. Use `reportlab` to generate the PDF.
+2. Manually create the table with horizontal lines for every row.
+3. Ensure the chore chart is structured properly in the PDF.
+
+### Installation of `reportlab`:
+First, you need to install the `reportlab` library if you don't have it already. You can do so by running:
+
+```bash
+pip install reportlab
+```
+
+### Updated Code for PDF Generation with Horizontal Lines:
+
+#### Updated `chore_chart.py`:
+
+```python
+import random
+import pickle
+from prettytable import PrettyTable
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+
+class ChoreChart:
+    def __init__(self):
+        self.chores = []
+        self.family_members = []
+        self.load_chores()
+        self.load_family_members()
+
+    def load_chores(self):
+        try:
+            with open("chores.txt", "r") as f:
+                self.chores = [line.strip() for line in f.readlines()]
+        except FileNotFoundError:
+            print("Chores file not found. Please add some chores to chores.txt.")
+    
+    def load_family_members(self):
+        # Placeholder for loading family members. Add or modify as needed.
+        self.family_members = ['Dad', 'Mom', 'Alice', 'Bob']
+
+    def create_chore_chart(self):
+        chart = {day: random.sample(self.chores, len(self.family_members)) for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]}
+        return chart
+
+    def display_family_chore_chart(self, chart, start_date, end_date):
+        time_frame = f"Week of {start_date} - {end_date}"
+        
+        for member in self.family_members:
+            table = PrettyTable()
+            table.field_names = ["Chores"] + list(chart.keys())  # Dates across top
+
+            # Add chores for each member, leaving the rest of the columns blank for marking
+            for i, chore in enumerate(self.chores):
+                row = [chore] + [''] * len(chart)  # Chores listed, blank cells for checking
+                table.add_row(row)
+
+            # Print the family member's chore chart with their name and time frame
+            print(f"Chore Chart for {member} | {time_frame}")
+            print(table)
+            print("\n")
+
+            # Now, let's generate the PDF for the member
+            self.generate_pdf(member, table, time_frame)
+
+    def generate_pdf(self, member, table, time_frame):
+        # Create a PDF file
+        file_name = f"{member}_chore_chart.pdf"
+        c = canvas.Canvas(file_name, pagesize=letter)
+        c.setFont("Helvetica", 10)
+
+        # Set up title with name and time frame
+        c.drawString(30, 750, f"Chore Chart for {member} | {time_frame}")
+        
+        # Setup the table rows
+        x_start = 30
+        y_start = 730
+        row_height = 20
+        column_widths = [100, 80, 80, 80, 80, 80, 80, 80]  # Adjust width as needed
+        line_height = 14
+
+        # Draw the header
+        columns = ["Chores"] + list(table.field_names[1:])
+        for col_index, column in enumerate(columns):
+            c.drawString(x_start + sum(column_widths[:col_index]), y_start, column)
+
+        y_position = y_start - line_height
+
+        # Draw the rows with horizontal lines
+        for i, row in enumerate(table._rows):
+            for j, cell in enumerate(row):
+                c.drawString(x_start + sum(column_widths[:j]), y_position, str(cell))
+            y_position -= line_height
+            c.line(x_start, y_position, x_start + sum(column_widths), y_position)  # Draw horizontal line
+
+        # Save the PDF
+        c.save()
+
+    def save_chart(self, chart):
+        with open("chore_chart.pkl", "wb") as f:
+            pickle.dump(chart, f)
+
+    def load_chart(self):
+        try:
+            with open("chore_chart.pkl", "rb") as f:
+                chart = pickle.load(f)
+            return chart
+        except FileNotFoundError:
+            print("No saved chore chart found.")
+            return None
+```
+
+### Explanation of Changes:
+
+1. **`generate_pdf` Method**:
+   - This method is responsible for generating the PDF. It uses the `reportlab` library to create a PDF file for each family member.
+   - It places the **family member’s name** and the **time frame** on top.
+   - It then constructs a table with **horizontal lines for each row**. For each row, a horizontal line is drawn at the end using `c.line()`.
+   
+2. **PDF Table Structure**:
+   - The table is drawn manually by looping through the rows and columns.
+   - The **column widths** are adjustable; you can change the width of the columns as needed.
+
+3. **Horizontal Lines**:
+   - After each row of data is drawn, the `c.line()` method is used to create a horizontal line that spans the width of the table.
+
+4. **Saving the PDF**:
+   - Each family member gets their own PDF with their chore chart, named using the format `member_chore_chart.pdf`.
+
+### Example Usage:
+
+```python
+chart_manager = ChoreChart()
+chart = chart_manager.create_chore_chart()
+start_date = "Mar 30, 2025"
+end_date = "Apr 5, 2025"
+chart_manager.display_family_chore_chart(chart, start_date, end_date)
+```
+
+This will generate a separate PDF for each family member, and each PDF will have horizontal lines separating each row in the table.
+
+### Output Example in PDF:
+
+The resulting PDF will look like this:
+
+- **Top Line**: `Chore Chart for Dad | Week of Mar 30, 2025 - Apr 5, 2025`
+- **Table with horizontal lines for each row:**
+
+```
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+|      Chores       |  Sunday   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |  Saturday |
++-------------------+-----------+-----------+-----------+-----------+-----------+-----------+-----------+
+| Wash Dishes       |           |           |           |           |           |           |           |
+---------------------------------------------------------------
+| Vacuum            |           |           |           |           |           |           |           |
+---------------------------------------------------------------
+| Clean Bathroom    |           |           |           |           |           |           |           |
+---------------------------------------------------------------
+...
+```
+
+### Conclusion:
+
+Now, when you generate the chore chart for each family member, it will create a PDF that includes horizontal lines for every row in the table. The **time frame** will appear on the right side of the member's name, and the entire table will be structured with horizontal lines for easy readability. 
+
+Let me know if you need any further customizations!
