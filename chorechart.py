@@ -16,7 +16,7 @@ class ChoreChart:
 
         execpt FileNotFoundError:
             print("No File Found, Please add a chores file!!)
+    
 
 
-    def load_family_members(self):
-        pass
+

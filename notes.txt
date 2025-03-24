@@ -48,6 +48,23 @@ class ChoreChart:
         except FileNotFoundError:
             print("Chores file not found. Please add some chores to chores.txt.")
     
+
+def load_family_members(self):
+    self.family_members = []
+    print("Please enter family members (type 'done' when finished):")
+    
+    while True:
+        member = input("Enter a family member: ")
+        if member.lower() == 'done':
+            break
+        if member:  # Check for empty input
+            self.family_members.append(member)
+        else:
+            print("Please enter a valid name.")
+    
+    print("Family members loaded:", self.family_members)
+
+
     def load_family_members(self):
         # Placeholder for loading family members.
         # For simplicity, you can add family members manually later or through a menu
